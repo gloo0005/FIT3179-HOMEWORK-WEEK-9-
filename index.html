@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ASEAN GDP (current US$), 2024 — Choropleth</title>
+  <script src="https://cdn.jsdelivr.net/npm/vega@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-lite@5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vega-embed@6"></script>
+  <style>
+    body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:#f7f7f8;color:#111}
+    header{padding:16px 20px}
+    h1{font-size:20px;margin:0 0 6px}
+    main{padding:0 20px 24px}
+    .card{background:#fff;border:1px solid #e6e6e6;border-radius:12px;box-shadow:0 1px 2px rgba(0,0,0,.05);padding:14px}
+    #vis{width:100%;max-width:980px;margin:0 auto}
+    figcaption{max-width:980px;margin:8px auto 0;color:#666;font-size:12px}
+  </style>
+</head>
+<body>
+<header>
+  <h1>ASEAN GDP (current US$), 2024 — Choropleth</h1>
+  <p style="margin:0;color:#555;font-size:13px">Log colour scale · ISO‑A3 join · Ocean & graticule · Focused SEA projection</p>
+</header>
+<main>
+  <div class="card"><div id="vis"></div></div>
+  <figcaption>Data: Kaggle “GDP per Country 2020–2025” → subset ASEAN 2024 (local CSV). Geometry: Natural Earth 1:110m.</figcaption>
+</main>
+<script>
+const spec = {
+  $schema: "https://vega.github.io/schema/vega-lite/v5.json",
+  width: 960, height: 560,
+  config: {background:"#fff", view:{stroke:null}},
+  projection: {type:"mercator", center:[115,5], scale:900, translate:[480,300]},
+  layer: [
+    {data:{sphere:true}, mark:{type:"geoshape", fill:"#eaf2fb"}},
+    {data:{graticule:{step:[10,10]}}, mark:{type:"geoshape", stroke:"#c9d7ee", strokeWidth:0.6, opacity:0.9}},
+    {
+      data:{
+        url:"https://cdn.jsdelivr.net/npm/vega-datasets@2.6.0/data/world-110m.json",
+        format:{type:"topojson", feature:"countries"}
+      },
+      transform: [
+        {"calculate":"datum.properties.iso_a3","as":"iso_a3"},
+        {
+          lookup:"iso_a3",
+          from:{
+            data:{url:"data/asean_gdp_2024.csv", format:{type:"csv"}},
+            key:"ISO3",
+            fields:["Country","GDP_2024_USD"]
+          }
+        },
+        {"calculate":"toNumber(datum['GDP_2024_USD'])","as":"gdp_2024"},
+        {"filter":"isValid(datum.gdp_2024)"}
+      ],
+      mark:{type:"geoshape", stroke:"#e6eef8", strokeWidth:0.8},
+      encoding:{
+        color:{
+          field:"gdp_2024", type:"quantitative",
+          scale:{type:"log", scheme:"blues"},
+          legend:{title:"GDP (US$), 2024", format:"~s"}
+        },
+        tooltip:[
+          {field:"Country", title:"Country"},
+          {field:"gdp_2024", title:"GDP 2024 (US$)", type:"quantitative", format:",.2s"},
+          {field:"iso_a3", title:"ISO‑A3"}
+        ]
+      }
+    }
+  ],
+  title:{text:"ASEAN GDP (current US$), 2024 — Choropleth", anchor:"start"}
+};
+vegaEmbed("#vis", spec, {actions:{export:true, source:true, editor:true}}).catch(console.error);
+</script>
+</body>
+</html>
